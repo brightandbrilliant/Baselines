@@ -1,6 +1,6 @@
 import torch
 from client import GCNClient, GraphSAGEClient, GATClient  # 确保路径正确
-from sklearn.metrics import precision_score, recall_score
+from sklearn.metrics import precision_score, recall_score, f1_score, confusion_matrix
 import argparse
 import os
 
@@ -20,20 +20,33 @@ def evaluate(model, data, device, threshold=0.1):
         logits, _ = model(data)
         probs = torch.sigmoid(logits)
 
-    # 使用 test_mask 选出测试节点
     test_mask = data.test_mask
     preds = (probs[test_mask] > threshold).float().cpu().numpy()
     labels = data.target_labels[test_mask].cpu().numpy()
 
     precision = precision_score(labels, preds, average='micro', zero_division=0)
     recall = recall_score(labels, preds, average='micro', zero_division=0)
-    return precision, recall
+    f1 = f1_score(labels, preds, average='micro', zero_division=0)
+
+    # FPR计算（按列/标签统计）
+    fpr_list = []
+    for i in range(labels.shape[1]):
+        cm = confusion_matrix(labels[:, i], preds[:, i], labels=[0, 1])
+        if cm.shape == (2, 2):
+            tn, fp = cm[0, 0], cm[0, 1]
+            fpr = fp / (fp + tn) if (fp + tn) > 0 else 0.0
+        else:
+            fpr = 0.0
+        fpr_list.append(fpr)
+    fpr_macro = sum(fpr_list) / len(fpr_list)
+
+    return precision, recall, f1, fpr_macro
 
 
 def main():
     parser = argparse.ArgumentParser(description="Evaluate GAT model")
-    parser.add_argument('--data_path', type=str, default='./Parsed_dataset/BlogCatalog/client0.pt')
-    parser.add_argument('--checkpoint_dir', type=str, default='./Check_SAGE')
+    parser.add_argument('--data_path', type=str, default='./Parsed_dataset/BlogCatalog-mask-clonegraph/client0_data.pt')
+    parser.add_argument('--checkpoint_dir', type=str, default='./Check_GAT')
     parser.add_argument('--device', type=str, default='cuda' if torch.cuda.is_available() else 'cpu')
     args = parser.parse_args()
 
@@ -60,11 +73,12 @@ def main():
     )
 
     # 遍历所有保存的 checkpoint 进行评估
-    for i in range(1, 21):
-        checkpoint_path = os.path.join(f'Check_GAT/gat_epoch_{100 * i}.pth')
+    for i in range(1, 61):
+        checkpoint_path = os.path.join(f'Check_GAT/gat_epoch_{50 * i}.pth')
         model = load_model(checkpoint_path, model_args, args.device)
-        precision, recall = evaluate(model, data, args.device)
-        print(f"[{checkpoint_path}] Precision: {precision:.4f}, Recall: {recall:.4f}")
+        precision, recall, f1, fpr = evaluate(model, data, args.device)
+        print(f"[{checkpoint_path}] Precision: {precision:.4f}, Recall: {recall:.4f}, "
+              f"F1:{f1:.4f}, FPR:{fpr:.4f}")
 
 
 if __name__ == '__main__':
