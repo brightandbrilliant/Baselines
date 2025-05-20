@@ -1,7 +1,7 @@
 import argparse
 import torch
 from client import GCNClient
-from Train.FedAVGTrainer import FedAvgTrainer
+from FedAVGTrainer import FedAvgTrainer
 import os
 
 def build_gcn_clients(n_clients, feature_dim, out_dim, device='cpu'):
