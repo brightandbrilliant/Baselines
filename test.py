@@ -45,7 +45,7 @@ def evaluate(model, data, device, threshold=0.1):
 
 def main():
     parser = argparse.ArgumentParser(description="Evaluate GAT model")
-    parser.add_argument('--data_path', type=str, default='./Parsed_dataset/BlogCatalog-mask-clonegraph/client0_data.pt')
+    parser.add_argument('--data_path', type=str, default='./Parsed_dataset/BlogCatalog/client0.pt')
     parser.add_argument('--checkpoint_dir', type=str, default='./Check_GAT')
     parser.add_argument('--device', type=str, default='cuda' if torch.cuda.is_available() else 'cpu')
     args = parser.parse_args()
@@ -73,8 +73,8 @@ def main():
     )
 
     # 遍历所有保存的 checkpoint 进行评估
-    for i in range(1, 61):
-        checkpoint_path = os.path.join(f'Check_GAT/gat_epoch_{50 * i}.pth')
+    for i in range(1, 11):
+        checkpoint_path = os.path.join(f'Check_GAT/gat_epoch_{10 * i}.pth')
         model = load_model(checkpoint_path, model_args, args.device)
         precision, recall, f1, fpr = evaluate(model, data, args.device)
         print(f"[{checkpoint_path}] Precision: {precision:.4f}, Recall: {recall:.4f}, "

@@ -19,7 +19,7 @@ def train(client, data, device, epochs=2000, save_path='./Check_GAT'):
         print(f"[Epoch {epoch+1:03d}] Loss: {loss.item():.4f}")
 
         # 保存模型
-        if save_path and (epoch + 1) % 100 == 0:
+        if save_path and (epoch + 1) % 10 == 0:
             torch.save(client.state_dict(), os.path.join(save_path, f'gat_epoch_{epoch+1}.pth'))
 
 
@@ -27,7 +27,7 @@ def main():
     parser = argparse.ArgumentParser(description="Train GCN baseline on single client")
     parser.add_argument('--data_path', type=str, default='./Parsed_dataset/BlogCatalog/client0.pt')
     parser.add_argument('--device', type=str, default='cuda' if torch.cuda.is_available() else 'cpu')
-    parser.add_argument('--epochs', type=int, default=12000)
+    parser.add_argument('--epochs', type=int, default=100)
     parser.add_argument('--save_dir', type=str, default='./Check_GAT')
     args = parser.parse_args()
 
